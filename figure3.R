@@ -4,11 +4,12 @@
 # Email: denniswillemvandermeer@gmail.com
 
 setwd("~/Desktop/Drive/PhD-Thesis/My-papers/UltraFastPreselection")
-libs <- c("ggplot2","cowplot","copula")
+libs <- c("ggplot2","cowplot","copula","Cairo")
 invisible(lapply(libs, library, character.only = TRUE))
 
-load("~/Desktop/Data/Hawaii/Hawaii_1min.RData") # Load the Hawaii data
+load("~/Desktop/Hawaii_1min.RData") # Load the Hawaii data
 dat <- as.matrix(Data1min[strftime(Data1min$Time, format = "%Y-%m-%d") %in% "2010-07-01",1:3])
+set.seed(123)
 # Normal copula
 cop_model <- copula::normalCopula(dim = ncol(dat), dispstr = "toep")
 cop_model@parameters <- copula::fitCopula(copula = cop_model, data = dat, method = "itau")@estimate
@@ -53,6 +54,5 @@ p <- ggplot(data = rnd, aes(x=x,y=y)) +
                                       margin = margin(0.02,0,0.02,0, "lines"))) +
             background_grid(major = "xy")
 print(p)
-ggsave(filename = "BivariateCopula.pdf", plot = p, 
-       device = "pdf", units = "cm", height = 8.5, width = 8.5) 
-
+ggsave(filename = "BivariateCopula.pdf", plot = p,
+       device = cairo_pdf, units = "cm", height = 8.5, width = 8.5) 

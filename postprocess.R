@@ -10,7 +10,7 @@ invisible(lapply(libs, library, character.only = TRUE))
 load("~/Desktop/Data/Hawaii/Hawaii_1min.RData")
 load("/Volumes/G-DRIVE_USB-C/Data/Hawaii/Hawaii_1min.RData")
 station.names <- colnames(Data1min[1:17])
-source(file.path(getwd(), "/my_functions_git.R"))
+source(file.path(getwd(), "git/SpaceTimeTrajectories/functions.R"))
 plot.size = 8; line.size = 0.1; point.size = 0.6
 Days <- seq.Date(from = as.Date("2010-07-01"), to = as.Date("2010-08-09"), by = "day")
 ###################################################################################
@@ -27,11 +27,11 @@ p.rel_Preselection <- Plot.ReliabilityDiagram(Results,station.names,K)
 p.sharp_Preselection <- Plot.Sharpness(Results,station.names,K)
 # Save figures:
 ggsave(filename = "~/Desktop/Drive/PhD-Thesis/My-papers/UltraFastPreselection/Paper/images/CRPS_QR_Preselection.pdf", plot = my.CRPS_Preselection[[2]], 
-       device = "pdf", units = "cm", height = 8.5, width = 8.5) 
+       device = cairo_pdf, units = "cm", height = 8.5, width = 8.5) 
 ggsave(filename = "~/Desktop/Drive/PhD-Thesis/My-papers/UltraFastPreselection/Paper/images/Reliability_QR_Preselection.pdf", plot = p.rel_Preselection, 
-       device = "pdf", units = "cm", height = 8.5, width = 8.5) 
+       device = cairo_pdf, units = "cm", height = 8.5, width = 8.5) 
 ggsave(filename = "~/Desktop/Drive/PhD-Thesis/My-papers/UltraFastPreselection/Paper/images/Sharpness_QR_Preselection.pdf", plot = p.sharp_Preselection, 
-       device = "pdf", units = "cm", height = 8.5, width = 8.5) 
+       device = cairo_pdf, units = "cm", height = 8.5, width = 8.5) 
 
 load("/Users/Dennis/Desktop/Drive/PhD-Thesis/My-papers/UltraFastPreselection/FC_Res_QR_NoPreselection.RData")
 my.CRPS_NoPreselection <- DailyCRPS(lstOfResults = Results, station.names = station.names)
@@ -43,14 +43,64 @@ p.rel_NoPreselection <- Plot.ReliabilityDiagram(Results,station.names,K)
 p.sharp_NoPreselection <- Plot.Sharpness(Results,station.names,K)
 # Save figures:
 ggsave(filename = "~/Desktop/Drive/PhD-Thesis/My-papers/UltraFastPreselection/Paper/images/CRPS_QR_NoPreselection.pdf", plot = my.CRPS_NoPreselection[[2]], 
-       device = "pdf", units = "cm", height = 8.5, width = 8.5) 
+       device = cairo_pdf, units = "cm", height = 8.5, width = 8.5) 
 ggsave(filename = "~/Desktop/Drive/PhD-Thesis/My-papers/UltraFastPreselection/Paper/images/Reliability_QR_NoPreselection.pdf", plot = p.rel_NoPreselection, 
-       device = "pdf", units = "cm", height = 8.5, width = 8.5) 
+       device = cairo_pdf, units = "cm", height = 8.5, width = 8.5) 
 ggsave(filename = "~/Desktop/Drive/PhD-Thesis/My-papers/UltraFastPreselection/Paper/images/Sharpness_QR_NoPreselection.pdf", plot = p.sharp_NoPreselection, 
-       device = "pdf", units = "cm", height = 8.5, width = 8.5) 
+       device = cairo_pdf, units = "cm", height = 8.5, width = 8.5) 
+
+# Downwind station ordering
+dwnwnd <- c("AP7", "AP4", "AP3", "AP6", "DH5", "AP1", "DH2", "AP5", "DH3", "DH4", "DH1", "DH7", "DH10", "DH11", "DH9", "DH6", "DH8")
+# Plot CRPS as facets (Figure 8):
+# Adapted from https://timogrossenbacher.ch/2016/12/beautiful-thematic-maps-with-ggplot2-only/
+tmp_Preselection <- my.CRPS_Preselection[[1]]; tmp_Preselection$Model <- "QR-exo"
+tmp_NoPreselection <- my.CRPS_NoPreselection[[1]]; tmp_NoPreselection$Model <- "QR-endo"
+tmp_Preselection$variable <- factor(tmp_Preselection$variable,levels = dwnwnd)
+tmp_NoPreselection$variable <- factor(tmp_NoPreselection$variable,levels = dwnwnd)
+mydf <- rbind(tmp_NoPreselection,tmp_Preselection)
+brks_scale <- levels(mydf$CRPS_quantiles)
+labels_scale <- rev(brks_scale)
+plot.size = 8; line.size = 0.1; point.size = 0.6
+p <- ggplot(data = mydf, aes(x = variable, y = as.factor(Horizon))) +
+  geom_raster(aes(fill=CRPS_quantiles)) +
+  facet_wrap(~Model, nrow = 1) +
+  xlab("Station") +
+  ylab("Forecast horizon (min)") +
+  theme(plot.margin = unit(c(0.2,0.4,0,0), "lines"),
+        text = element_text(family = "Times"),
+        axis.text=element_text(size=plot.size),
+        axis.text.x = element_text(angle = 90),
+        axis.title=element_text(size=plot.size),
+        strip.text = element_text(size=plot.size),
+        legend.position = "bottom",
+        legend.justification = "center",
+        legend.title = element_text(size = plot.size),
+        legend.text = element_text(size = plot.size),
+        legend.margin = ggplot2::margin(0,0,0,0),
+        legend.box.margin = ggplot2::margin(-10,-10,0,-10)) +
+  scale_fill_manual(
+    values = rev(magma(10)),
+    breaks = rev(brks_scale),
+    name = "CRPS",
+    drop = FALSE,
+    labels = labels_scale,
+    guide = guide_legend(
+      direction = "horizontal",
+      keyheight = unit(2, units = "mm"),
+      keywidth = unit(70 / length(labels_scale), units = "mm"),
+      title.position = 'top',
+      title.hjust = 0.5,
+      label.hjust = 1,
+      nrow = 1,
+      byrow = T,
+      reverse = T,
+      label.position = "bottom"
+    )
+  )
+ggsave(filename = "~/Desktop/Drive/PhD-Thesis/My-papers/UltraFastPreselection/Paper/images/CRPS_QR.pdf", plot = p, 
+       device = cairo_pdf, units = "cm", height = 8.5, width = 17) 
 
 # Reorder according to downwind positioning:
-dwnwnd <- c("AP7", "AP4", "AP3", "AP6", "DH5", "AP1", "DH2", "AP5", "DH3", "DH4", "DH1", "DH7", "DH10", "DH11", "DH9", "DH6", "DH8")
 res_Preselection <- data.frame(Horizon=CRPS_Preselection$Horizon,
                                Station=CRPS_Preselection$variable,
                                CRPS=CRPS_Preselection$CRPS,
@@ -180,8 +230,8 @@ p.ES <- ggplot(data = mydf, aes(x=Date,y=value,colour=Model)) +
   background_grid(major = "xy") +
   scale_color_manual(values = group.colors, labels = lab1) +
   ylab("Energy score (-)")
-ggsave(filename = "energyScorePlot.pdf", plot = p.ES, 
-       device = "pdf", units = "cm", height = 8.5, width = 8.5)
+ggsave(filename = "~/Desktop/Drive/PhD-Thesis/My-papers/UltraFastPreselection/Paper/images/energyScorePlot.pdf", plot = p.ES, 
+       device = cairo_pdf, units = "cm", height = 8.5, width = 8.5)
 
 ###################################################################################
 # Generate multivariate rank histograms in Fig. 9 and Fig. 10
@@ -194,6 +244,7 @@ for(r in RHs){
   mystr <- strsplit(list.files(path = ".", pattern = r),"[_.]")[[1]]
   if(mystr[1] == "ARH" & mystr[3] != "NoPreselection"){
     load(r)
+    ARH <- hist(ARH, plot = F)
     dat <- data.frame(Counts=ARH$counts, x=ARH$mids)
     p <- ggplot(data = dat, aes(x=x,y=Counts)) +
       geom_bar(stat = "identity") +
@@ -205,6 +256,7 @@ for(r in RHs){
            device = "pdf", units = "cm", height = 21, width = 29.7)
   } else if(mystr[1] == "ARH" & mystr[3] == "NoPreselection") {
     load(r)
+    ARH <- hist(ARH, plot = F)
     dat <- data.frame(Counts=ARH$counts, x=ARH$mids)
     p <- ggplot(data = dat, aes(x=x,y=Counts)) +
       geom_bar(stat = "identity") +
@@ -216,6 +268,7 @@ for(r in RHs){
            device = "pdf", units = "cm", height = 21, width = 29.7)
   } else if(mystr[1] == "BDR" & mystr[3] != "NoPreselection"){
     load(r) # load the RH
+    BDR <- hist(BDR, plot = F)
     dat <- data.frame(Counts=BDR$counts, x=BDR$mids)
     p <- ggplot(data = dat, aes(x=x,y=Counts)) +
       geom_bar(stat = "identity") +
@@ -227,6 +280,7 @@ for(r in RHs){
            device = "pdf", units = "cm", height = 21, width = 29.7)
   } else if(mystr[1] == "BDR" & mystr[3] == "NoPreselection") {
     load(r) # load the RH
+    BDR <- hist(BDR, plot = F)
     dat <- data.frame(Counts=BDR$counts, x=BDR$mids)
     p <- ggplot(data = dat, aes(x=x,y=Counts)) +
       geom_bar(stat = "identity") +

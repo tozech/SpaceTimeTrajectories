@@ -4,14 +4,14 @@
 setwd("~/Desktop/Drive/PhD-Thesis/My-papers/UltraFastPreselection")
 load("/Volumes/G-DRIVE_USB-C/Data/Hawaii/Hawaii_1min.RData")
 
-libs <- c("ggplot2","cowplot","copula","data.table")
+libs <- c("ggplot2","cowplot","copula","data.table","Cairo")
 invisible(lapply(libs, library, character.only = TRUE))
 
 Days <- seq.Date(from = as.Date("2010-07-01"), to = as.Date("2010-08-09"), by = "day") # 40 Days
 lst <- list()
 K <- 9
 # source(file.path(getwd(), "/SupplementaryMaterials/functions.R"))
-source(file.path(getwd(), "/my_functions_git.R"))
+source(file.path(getwd(), "git/SpaceTimeTrajectories/functions.R"))
 for(d in seq(1,40,1)){ # Loop over the days
   X <- Data1min[as.Date(Data1min$Time, format = "%Y-%m-%d") == Days[d],] # For the correlation structure
   X <- subset(X, select = -Time)        # Deselect time for the algorithm
@@ -27,7 +27,7 @@ X.lagged <- do.call(rbind,lst)
 X.lagged <- X.lagged[complete.cases(X.lagged),]
 
 # Since X.lagged is too large for the parametric copulas, randomly sample from X.lagged
-set.seed(124)
+set.seed(123)
 X.lagged <- X.lagged[sample.int(nrow(X.lagged), 500),]
 
 # Loop over copulas
@@ -94,7 +94,7 @@ p1 <- ggplot(data = dat, aes(x=Counts)) +
   background_grid(major = "xy")
 print(p1)
 ggsave(filename = "correlationErrorHistogram.pdf", plot = p1, 
-       device = "pdf", units = "cm", height = 8.5, width = 8.5) 
+       device = cairo_pdf, units = "cm", height = 8.5, width = 8.5) 
 
 
 
