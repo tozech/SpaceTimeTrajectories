@@ -139,6 +139,8 @@ flatten <- function(ar){ # Function to create a DF of an 3D array
 #################################################################################
 # Functions required by the ultra-fast preselection algorithm
 #################################################################################
+# These functions are adapted from Dazhi Yang. 
+# See https://doi.org/10.1016/j.solener.2018.08.041 for more information
 zNorm <- function(x)
 {
   x <- (x - mean(x)) / (sd(x)*sqrt((length(x)-1)/length(x))) 
@@ -217,6 +219,8 @@ UltraFastFCs <- function(K, dat, station.names, model="QR"){
         
         ##################################################################################
         # The main preselection routine
+        # This code is adapted from Dazhi Yang. 
+        # See https://doi.org/10.1016/j.solener.2018.08.041 for more information
         ##################################################################################
         query <- Y[i:(i+m-1)]             # Take a slice of the response variable (query)
         data <- X.design[(i-nt):(i+m-2),] # Take a slice of the X including nt time lags
